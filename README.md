@@ -1,8 +1,13 @@
-# tool-intake
-
-An agent skill for deciding whether a new tool, skill, or repository belongs in your agent stack, and a read-only script that gathers the evidence first.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+    <img src="assets/banner-light.svg" alt="tool-intake: evidence first, then install">
+  </picture>
+</p>
 
 [![skills.sh](https://skills.sh/b/hong-tm/tool-intake)](https://skills.sh/hong-tm/tool-intake)
+
+An agent skill for deciding whether a new tool, skill, or repository belongs in your agent stack, and a read-only script that gathers the evidence first.
 
 ## Install
 
