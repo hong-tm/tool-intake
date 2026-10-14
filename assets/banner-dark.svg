@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1800" height="600" viewBox="0 0 1800 600" role="img" aria-labelledby="title description">
+<title id="title">tool-intake: check tools before adding them to your AI stack</title>
+<desc id="description">A candidate tool is compared with existing skills and checked for maintenance, overlap and requirements. Three possible recommendations are Global, Project and Skip. Project is selected.</desc>
+<!-- Editable vector artwork. All text remains text. Named groups separate copy, candidate cards, comparison, station, routes and destinations. No embedded raster images or external assets. -->
+<defs>
+ <linearGradient id="background" x2="1" y2="1"><stop stop-color="#111923"/><stop offset="1" stop-color="#1b2835"/></linearGradient>
+ <linearGradient id="ceramic" x2="0.3" y2="1"><stop stop-color="#526170"/><stop offset="1" stop-color="#344351"/></linearGradient>
+ <linearGradient id="card" x2="0.2" y2="1"><stop stop-color="#465665"/><stop offset="1" stop-color="#293744"/></linearGradient>
+ <linearGradient id="blue" x2="0.4" y2="1"><stop stop-color="#649eff"/><stop offset="1" stop-color="#3068c6"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="170%" height="190%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000000" flood-opacity=".3"/></filter>
+ <filter id="small-shadow" x="-30%" y="-25%" width="170%" height="175%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity=".2"/></filter>
+ <marker id="arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M3 2 L8 6 L3 10" fill="none" stroke="#71818e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+ <marker id="blue-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="7" markerHeight="7" orient="auto"><path d="M3 2 L8 6 L3 10" fill="none" stroke="#649eff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+ <g id="wrench" fill="none" stroke="currentColor" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"><path d="M35 5 A13 13 0 0 0 18 22 L3 37 A5 5 0 0 0 10 44 L26 28 A13 13 0 0 0 43 11 L34 20 L25 12 Z"/></g>
+ <g id="layers" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13 L22 2 L42 13 L22 24 Z M2 23 L22 34 L42 23 M2 33 L22 44 L42 33"/></g>
+</defs>
+<rect width="1800" height="600" fill="url(#background)"/>
+<g id="copy" fill="#eef2f6">
+ <text x="70" y="235" font-family="'DejaVu Sans Mono',Consolas,monospace" font-size="76" font-weight="700" letter-spacing="-4">tool-intake</text>
+ <text x="74" y="292" font-family="'DejaVu Sans',Arial,sans-serif" font-size="27" letter-spacing="-.6"><tspan x="74">Check tools before adding them</tspan><tspan x="74" dy="40">to your AI stack.</tspan></text>
+ <path d="M76 386 H117" stroke="#649eff" stroke-width="3" stroke-linecap="round"/>
+ <text x="132" y="392" fill="#aab8c6" font-family="'DejaVu Sans',Arial,sans-serif" font-size="18">Evidence first. Then decide.</text>
+</g>
+<g id="candidate-cards" filter="url(#small-shadow)">
+ <g transform="translate(692 238) rotate(-10 42 68)"><rect x="5" y="5" width="82" height="137" rx="12" fill="#26323f"/><rect width="82" height="137" rx="12" fill="url(#card)" stroke="#526170"/><use xlink:href="#layers" transform="translate(19 32)" color="#aab8c6"/><path d="M20 99 H60 M20 111 H47" stroke="#526170" stroke-width="4" stroke-linecap="round"/></g>
+ <g transform="translate(755 264) rotate(5 42 68)"><rect x="5" y="5" width="82" height="137" rx="12" fill="#26323f"/><rect width="82" height="137" rx="12" fill="url(#card)" stroke="#526170"/><use xlink:href="#wrench" transform="translate(18 32)" color="#aab8c6"/><path d="M20 99 H60 M20 111 H47" stroke="#526170" stroke-width="4" stroke-linecap="round"/></g>
+</g>
+<path d="M850 335 H893" stroke="#71818e" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+<g id="station" filter="url(#shadow)">
+ <rect x="937" y="180" width="441" height="247" rx="28" fill="#26323f"/>
+ <rect x="925" y="167" width="441" height="247" rx="28" fill="url(#ceramic)" stroke="#526170" stroke-width="1.5"/>
+ <path d="M950 171 H1337" stroke="#526170" stroke-width="2" stroke-linecap="round"/>
+ <rect x="950" y="197" width="145" height="192" rx="15" fill="#234d92"/>
+ <rect x="944" y="191" width="145" height="192" rx="15" fill="url(#blue)" stroke="#649eff"/>
+ <rect x="965" y="212" width="103" height="150" rx="5" fill="#23303d" stroke="#234d92" stroke-width="2"/>
+ <rect x="985" y="179" width="60" height="5" rx="2.5" fill="#526170"/>
+ <path d="M927 362 L1080 362 L1112 399 L953 399 Z" fill="#26323f" stroke="#526170"/>
+ <path d="M953 399 H1112 V412 Q1112 421 1102 421 H963 Q953 421 953 411 Z" fill="#23303d"/>
+ <g id="candidate" transform="translate(982 258) rotate(-5 39 58)" filter="url(#small-shadow)"><rect x="5" y="4" width="78" height="114" rx="10" fill="#234d92"/><rect width="78" height="114" rx="10" fill="url(#blue)" stroke="#649eff"/><use xlink:href="#wrench" transform="translate(17 18) scale(.9)" color="#ecf4ff"/><path d="M18 85 H58 M18 96 H44" stroke="#b8d3ff" stroke-width="3.5" stroke-linecap="round"/></g>
+ <g id="checks" font-family="'DejaVu Sans',Arial,sans-serif" font-size="18" fill="#eef2f6">
+ <rect x="1110" y="198" width="231" height="182" rx="15" fill="#23303d" stroke="#526170"/>
+ <path d="M1128 258 H1323 M1128 319 H1323" stroke="#526170" stroke-opacity=".65"/>
+ <path d="M1127 229 H1134 L1139 215 L1145 239 L1151 229 H1157" fill="none" stroke="#aab8c6" stroke-width="2.4" stroke-linejoin="round"/>
+ <text x="1169" y="235">Maintenance</text><circle cx="1320" cy="229" r="5" fill="#a9c9ac"/>
+ <rect x="1129" y="278" width="17" height="17" rx="4" fill="none" stroke="#aab8c6" stroke-width="2.2"/><rect x="1137" y="286" width="17" height="17" rx="4" fill="none" stroke="#aab8c6" stroke-width="2.2"/>
+ <text x="1169" y="296">Overlap</text><circle cx="1320" cy="290" r="5" fill="#d9b67b"/>
+ <path d="M1132 337 V346 Q1132 350 1137 350 H1147 V359 M1147 337 V343" fill="none" stroke="#aab8c6" stroke-width="2.2"/><circle cx="1132" cy="335" r="3" fill="#aab8c6"/><circle cx="1147" cy="335" r="3" fill="#aab8c6"/><circle cx="1147" cy="362" r="3" fill="#aab8c6"/>
+ <text x="1169" y="357">Requirements</text><circle cx="1320" cy="351" r="5" fill="#526170"/>
+ </g>
+</g>
+<g id="existing-comparison">
+ <path d="M1020 432 V469 Q1020 479 1032 479 H1135" stroke="#71818e" stroke-width="2" stroke-dasharray="4 5" fill="none"/>
+ <g transform="translate(1150 434)" filter="url(#small-shadow)"><rect x="24" y="-9" width="49" height="63" rx="7" fill="#26323f" stroke="#526170"/><rect x="12" y="-4" width="49" height="63" rx="7" fill="url(#card)" stroke="#526170"/><rect width="49" height="63" rx="7" fill="url(#card)" stroke="#526170"/><use xlink:href="#wrench" transform="translate(11 12) scale(.6)" color="#aab8c6"/></g>
+ <text x="1239" y="467" fill="#aab8c6" font-size="17" font-family="'DejaVu Sans',Arial,sans-serif"><tspan x="1239">Compare with</tspan><tspan x="1239" dy="23">installed skills</tspan></text>
+</g>
+<g id="recommendation-routes" fill="none" stroke-width="4" stroke-linecap="round">
+ <path d="M1384 228 H1400 Q1422 228 1422 206 V145 Q1422 125 1442 125 H1509" stroke="#71818e" marker-end="url(#arrow)"/>
+ <path d="M1384 291 H1509" stroke="#649eff" marker-end="url(#blue-arrow)"/>
+ <path d="M1384 350 H1400 Q1422 350 1422 372 V437 Q1422 457 1442 457 H1509" stroke="#71818e" marker-end="url(#arrow)"/>
+</g>
+<g id="destinations" font-family="'DejaVu Sans',Arial,sans-serif" font-size="21" font-weight="500" text-anchor="middle" fill="#eef2f6">
+ <g id="global" transform="translate(1530 74)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#26323f"/><rect x="30" y="-10" width="121" height="76" rx="9" fill="#26323f" stroke="#526170"/><rect x="39" y="0" width="121" height="76" rx="9" fill="url(#card)" stroke="#526170"/><rect x="48" y="10" width="121" height="76" rx="9" fill="url(#card)" stroke="#526170"/><use xlink:href="#layers" transform="translate(88 24) scale(.7)" color="#aab8c6"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#526170"/><text x="104" y="91">Global</text></g>
+ <g id="project" transform="translate(1530 241)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#26323f"/><path d="M40 58 V6 Q40 -4 50 -4 H89 L103 9 H159 Q169 9 169 20 V63 Z" fill="#234d92" stroke="#649eff"/><path d="M30 66 V19 Q30 9 40 9 H81 L96 22 H160 Q170 22 170 33 V74 Z" fill="url(#blue)" stroke="#649eff"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#526170"/><text x="104" y="91">Project</text></g>
+ <g id="skip" transform="translate(1530 408)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#26323f"/><rect x="9" y="19" width="188" height="74" rx="15" fill="#23303d" stroke="#526170"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#526170"/><text x="104" y="91">Skip</text><path d="M95 37 H113" stroke="#aab8c6" stroke-width="3" stroke-linecap="round"/></g>
+</g>
+</svg>
