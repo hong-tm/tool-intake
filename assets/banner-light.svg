@@ -16,11 +16,10 @@
 </defs>
 <rect width="1800" height="600" fill="url(#background)"/>
 <g id="copy" fill="#202e3a">
- <text x="70" y="235" font-family="Arial,Helvetica,'Noto Sans',sans-serif" font-size="86" font-weight="700" letter-spacing="-2.5">tool-intake</text>
- <text x="74" y="292" font-family="Arial,Helvetica,'Noto Sans',sans-serif" font-size="27" letter-spacing="-.6"><tspan x="74">Check tools before adding them</tspan><tspan x="74" dy="40">to your AI stack.</tspan></text>
- <path d="M76 386 H117" stroke="#387ce8" stroke-width="3" stroke-linecap="round"/>
- <text x="132" y="392" fill="#64717a" font-family="Arial,Helvetica,'Noto Sans',sans-serif" font-size="18">Evidence first. Then decide.</text>
+ <text x="70" y="235" font-family="Arial,Helvetica,'Noto Sans',sans-serif" font-size="62" font-weight="700" letter-spacing="-1.8">tool-intake</text>
+ <text x="74" y="285" font-family="Arial,Helvetica,'Noto Sans',sans-serif" font-size="24" letter-spacing="-.3"><tspan x="74">Check tools before</tspan><tspan x="74" dy="34">adding them to</tspan><tspan x="74" dy="34">your AI stack.</tspan></text>
 </g>
+<g id="inspection-scene" transform="translate(-337 -52) scale(1.2)">
 <g id="candidate-cards" filter="url(#small-shadow)">
  <g transform="translate(692 238) rotate(-10 42 68)"><rect x="5" y="5" width="82" height="137" rx="12" fill="#d7d9d5"/><rect width="82" height="137" rx="12" fill="url(#card)" stroke="#c7c9c6"/><use xlink:href="#layers" transform="translate(19 32)" color="#64717a"/><path d="M20 99 H60 M20 111 H47" stroke="#c7c9c6" stroke-width="4" stroke-linecap="round"/></g>
  <g transform="translate(755 264) rotate(5 42 68)"><rect x="5" y="5" width="82" height="137" rx="12" fill="#d7d9d5"/><rect width="82" height="137" rx="12" fill="url(#card)" stroke="#c7c9c6"/><use xlink:href="#wrench" transform="translate(18 32)" color="#64717a"/><path d="M20 99 H60 M20 111 H47" stroke="#c7c9c6" stroke-width="4" stroke-linecap="round"/></g>
@@ -62,5 +61,6 @@
  <g id="global" transform="translate(1530 74)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#d7d9d5"/><rect x="30" y="-10" width="121" height="76" rx="9" fill="#d7d9d5" stroke="#c7c9c6"/><rect x="39" y="0" width="121" height="76" rx="9" fill="url(#card)" stroke="#c7c9c6"/><rect x="48" y="10" width="121" height="76" rx="9" fill="url(#card)" stroke="#c7c9c6"/><use xlink:href="#layers" transform="translate(88 24) scale(.7)" color="#64717a"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#c7c9c6"/><text x="104" y="91">Global</text></g>
  <g id="project" transform="translate(1530 241)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#d7d9d5"/><path d="M40 58 V6 Q40 -4 50 -4 H89 L103 9 H159 Q169 9 169 20 V63 Z" fill="#194887" stroke="#387ce8"/><path d="M30 66 V19 Q30 9 40 9 H81 L96 22 H160 Q170 22 170 33 V74 Z" fill="url(#blue)" stroke="#387ce8"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#c7c9c6"/><text x="104" y="91">Project</text></g>
  <g id="skip" transform="translate(1530 408)" filter="url(#small-shadow)"><rect x="18" y="9" width="181" height="90" rx="15" fill="#d7d9d5"/><rect x="9" y="19" width="188" height="74" rx="15" fill="#fafaf6" stroke="#c7c9c6"/><path d="M8 61 Q8 52 19 52 H187 Q198 52 198 63 V103 Q198 114 186 114 H21 Q8 114 8 102 Z" fill="url(#ceramic)" stroke="#c7c9c6"/><text x="104" y="91">Skip</text><path d="M95 37 H113" stroke="#64717a" stroke-width="3" stroke-linecap="round"/></g>
+</g>
 </g>
 </svg>
