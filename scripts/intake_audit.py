@@ -126,7 +126,7 @@ def find_project_roots(start: Path) -> list[Path]:
     while True:
         for rel in PROJECT_ROOTS:
             candidate = current / rel
-            if candidate.is_dir():
+            if candidate.is_dir() or candidate.is_symlink():
                 found.append(candidate)
         if current.parent == current or current == Path("/"):
             break
@@ -139,52 +139,88 @@ def collect_roots(extra: list[str]) -> tuple[list[Path], list[str]]:
     roots: list[Path] = []
     for entry in USER_ROOTS:
         path = Path(os.path.expanduser(entry))
-        if path.is_dir():
+        if path.is_dir() or path.is_symlink():
             roots.append(path)
     roots.extend(find_project_roots(Path.cwd()))
     for entry in extra:
-        path = Path(os.path.expanduser(entry)).resolve()
-        if path.is_dir():
-            roots.append(path)
-        else:
-            notes.append(f"--roots path does not exist, skipped: {entry}")
+        roots.append(Path(os.path.abspath(os.path.expanduser(entry))))
 
     unique: list[Path] = []
     seen: set[str] = set()
     for path in roots:
-        real = str(path.resolve())
-        if real in seen:
+        lexical = str(path)
+        if lexical in seen:
             continue
-        seen.add(real)
-        unique.append(path)
+        seen.add(lexical)
+        resolved = resolve_inventory_path(path, notes)
+        if resolved is not None:
+            if resolved.is_dir():
+                unique.append(path)
+            else:
+                notes.append(f"root is not a directory, skipped: {path}")
     return unique, notes
+
+
+def resolve_inventory_path(path: Path, notes: list[str]) -> Path | None:
+    try:
+        return path.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        notes.append(f"unresolvable path, skipped: {path}: {exc}")
+        return None
 
 
 def inventory(roots: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
     skills: list[dict[str, Any]] = []
     notes: list[str] = []
+    canonical_skills: dict[str, dict[str, Any]] = {}
     for root in roots:
-        count_before = len(skills)
-        for entry in sorted(root.iterdir()):
-            if not entry.is_dir():
+        found = False
+        try:
+            entries = sorted(root.iterdir())
+        except OSError as exc:
+            notes.append(f"unreadable root, skipped: {root}: {exc}")
+            continue
+        for entry in entries:
+            resolved_entry = resolve_inventory_path(entry, notes)
+            if resolved_entry is None or not resolved_entry.is_dir():
                 continue
             skill_md = entry / "SKILL.md"
-            if not skill_md.is_file():
+            if not skill_md.exists() and not skill_md.is_symlink():
+                continue
+            resolved_skill = resolve_inventory_path(skill_md, notes)
+            if resolved_skill is None or not resolved_skill.is_file():
+                continue
+            canonical = str(resolved_skill)
+            entrypoint = {"path": str(skill_md), "root": str(root)}
+            if canonical in canonical_skills:
+                found = True
+                aliases = canonical_skills[canonical]["entrypoints"]
+                if entrypoint not in aliases:
+                    aliases.append(entrypoint)
                 continue
             meta = parse_frontmatter(skill_md)
             if meta is None:
                 notes.append(f"unparseable frontmatter, skipped: {skill_md}")
                 continue
-            skills.append(
-                {
-                    "name": meta["name"],
-                    "description": meta.get("description", ""),
-                    "path": str(skill_md),
-                    "root": str(root),
-                }
-            )
-        if len(skills) == count_before:
+            found = True
+            skill = {
+                "name": meta["name"],
+                "description": meta.get("description", ""),
+                "path": str(skill_md),
+                "root": str(root),
+                "canonical_path": canonical,
+                "entrypoints": [entrypoint],
+            }
+            canonical_skills[canonical] = skill
+            skills.append(skill)
+        if not found:
             notes.append(f"no skills found under: {root}")
+    by_name: dict[str, list[str]] = {}
+    for skill in skills:
+        by_name.setdefault(skill["name"], []).append(skill["canonical_path"])
+    for name, paths in by_name.items():
+        if len(paths) > 1:
+            notes.append(f"skill name collision: {name}: {'; '.join(paths)}")
     return skills, notes
 
 
@@ -341,8 +377,13 @@ def render_markdown(report: dict[str, Any]) -> str:
     add("## 2. Installed skill inventory")
     add("")
     for entry in report["inventory_roots"]:
-        add(f"- {entry['root']} ({entry['count']} skill(s))")
+        add(f"- {entry['root']} ({entry['count']} unique skill(s), {entry['entrypoint_count']} entrypoint(s))")
     add(f"- Total distinct skills: {len(report['skills'])}")
+    add(f"- Total entrypoints: {sum(len(skill['entrypoints']) for skill in report['skills'])}")
+    for skill in report["skills"]:
+        add(f"- {skill['name']}: {skill['canonical_path']}")
+        for entrypoint in skill["entrypoints"]:
+            add(f"  - entrypoint: {entrypoint['path']} | root: {entrypoint['root']}")
     for note in report["notes"]:
         add(f"- note: {note}")
     add("")
@@ -398,7 +439,17 @@ def main(argv: list[str] | None = None) -> int:
     inventory_roots = []
     for root in roots:
         inventory_roots.append(
-            {"root": str(root), "count": sum(1 for skill in skills if skill["root"] == str(root))}
+            {
+                "root": str(root),
+                "count": sum(
+                    1 for skill in skills
+                    if any(entry["root"] == str(root) for entry in skill["entrypoints"])
+                ),
+                "entrypoint_count": sum(
+                    1 for skill in skills for entry in skill["entrypoints"]
+                    if entry["root"] == str(root)
+                ),
+            }
         )
 
     upstream: dict[str, Any] | None = None
