@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
-    <img src="assets/banner-light.svg" alt="tool-intake: evidence first, then install">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.webp">
+    <img src="assets/banner-light.webp" alt="tool-intake: evidence first, then install">
   </picture>
 </p>
 
