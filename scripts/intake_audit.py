@@ -10,7 +10,9 @@ from __future__ import annotations
 import argparse
 import base64
 import datetime as dt
+import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -85,11 +87,13 @@ def tokenize(text: str) -> set[str]:
     return out
 
 
-def parse_frontmatter(path: Path) -> dict[str, str] | None:
-    try:
-        text = path.read_text(encoding="utf-8", errors="replace")[:20000]
-    except OSError:
-        return None
+def parse_frontmatter(path: Path, text: str | None = None) -> dict[str, str] | None:
+    if text is None:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return None
+    text = text[:20000]
     if not text.startswith("---"):
         return None
     end = text.find("\n---", 3)
@@ -134,14 +138,15 @@ def find_project_roots(start: Path) -> list[Path]:
     return found
 
 
-def collect_roots(extra: list[str]) -> tuple[list[Path], list[str]]:
+def collect_roots(extra: list[str], only_roots: bool = False) -> tuple[list[Path], list[str]]:
     notes: list[str] = []
     roots: list[Path] = []
-    for entry in USER_ROOTS:
-        path = Path(os.path.expanduser(entry))
-        if path.is_dir() or path.is_symlink():
-            roots.append(path)
-    roots.extend(find_project_roots(Path.cwd()))
+    if not only_roots:
+        for entry in USER_ROOTS:
+            path = Path(os.path.expanduser(entry))
+            if path.is_dir() or path.is_symlink():
+                roots.append(path)
+        roots.extend(find_project_roots(Path.cwd()))
     for entry in extra:
         roots.append(Path(os.path.abspath(os.path.expanduser(entry))))
 
@@ -174,7 +179,6 @@ def inventory(roots: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
     notes: list[str] = []
     canonical_skills: dict[str, dict[str, Any]] = {}
     for root in roots:
-        found = False
         try:
             entries = sorted(root.iterdir())
         except OSError as exc:
@@ -193,28 +197,30 @@ def inventory(roots: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
             canonical = str(resolved_skill)
             entrypoint = {"path": str(skill_md), "root": str(root)}
             if canonical in canonical_skills:
-                found = True
                 aliases = canonical_skills[canonical]["entrypoints"]
                 if entrypoint not in aliases:
                     aliases.append(entrypoint)
                 continue
-            meta = parse_frontmatter(skill_md)
+            try:
+                content = resolved_skill.read_bytes()
+            except OSError as exc:
+                notes.append(f"unreadable skill, skipped: {skill_md}: {exc}")
+                continue
+            meta = parse_frontmatter(skill_md, content.decode("utf-8", "replace"))
             if meta is None:
                 notes.append(f"unparseable frontmatter, skipped: {skill_md}")
                 continue
-            found = True
             skill = {
                 "name": meta["name"],
                 "description": meta.get("description", ""),
                 "path": str(skill_md),
                 "root": str(root),
                 "canonical_path": canonical,
+                "sha256": hashlib.sha256(content).hexdigest(),
                 "entrypoints": [entrypoint],
             }
             canonical_skills[canonical] = skill
             skills.append(skill)
-        if not found:
-            notes.append(f"no skills found under: {root}")
     by_name: dict[str, list[str]] = {}
     for skill in skills:
         by_name.setdefault(skill["name"], []).append(skill["canonical_path"])
@@ -222,6 +228,20 @@ def inventory(roots: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
         if len(paths) > 1:
             notes.append(f"skill name collision: {name}: {'; '.join(paths)}")
     return skills, notes
+
+
+def same_name_groups(skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_name: dict[str, list[dict[str, str]]] = {}
+    for skill in skills:
+        by_name.setdefault(skill["name"], []).append({
+            "canonical_path": skill["canonical_path"], "sha256": skill["sha256"],
+        })
+    return [
+        {"name": name, "copies": sorted(copies, key=lambda item: item["canonical_path"]),
+         "content_identical": len({copy["sha256"] for copy in copies}) == 1,
+         "equality_scope": "SKILL.md"}
+        for name, copies in sorted(by_name.items()) if len(copies) > 1
+    ]
 
 
 def parse_github(url: str) -> tuple[str, str] | None:
@@ -248,61 +268,76 @@ def http_json(url: str) -> tuple[dict[str, Any] | None, str | None]:
         return None, f"{type(exc).__name__}: {exc}"
 
 
-def upstream_github(owner: str, repo: str) -> dict[str, Any]:
-    result: dict[str, Any] = {"repo": f"{owner}/{repo}", "warnings": []}
+def upstream_github(owner: str, repo: str, as_of: dt.date | None = None) -> dict[str, Any]:
+    result: dict[str, Any] = {"repo": f"{owner}/{repo}", "warnings": [],
+                              "evidence_sources": [], "evidence_status": "partial"}
     data, error = http_json(f"https://api.github.com/repos/{owner}/{repo}")
     if error or not data:
         result["warnings"].append(error or "no data")
-        return result
-
-    result["stars"] = data.get("stargazers_count")
-    result["forks"] = data.get("forks_count")
-    result["license"] = ((data.get("license") or {}).get("spdx_id") or "NONE")
-    result["archived"] = bool(data.get("archived"))
-    result["open_issues"] = data.get("open_issues_count")
-    result["created"] = (data.get("created_at") or "")[:10]
-    pushed = (data.get("pushed_at") or "")[:10]
-    result["last_push"] = pushed
-    if pushed:
-        try:
-            days = (dt.date.today() - dt.date.fromisoformat(pushed)).days
-            result["days_since_push"] = days
-        except ValueError:
-            pass
-    result["description"] = data.get("description") or ""
+    else:
+        result["stars"] = data.get("stargazers_count")
+        result["forks"] = data.get("forks_count")
+        result["license"] = ((data.get("license") or {}).get("spdx_id") or "NONE")
+        result["archived"] = bool(data.get("archived"))
+        result["open_issues"] = data.get("open_issues_count")
+        result["created"] = (data.get("created_at") or "")[:10]
+        pushed = (data.get("pushed_at") or "")[:10]
+        result["last_push"] = pushed
+        if pushed:
+            try:
+                today = as_of or dt.datetime.now(dt.timezone.utc).date()
+                result["days_since_push"] = (today - dt.date.fromisoformat(pushed)).days
+            except ValueError:
+                result["warnings"].append(f"invalid last push date: {pushed}")
+        result["description"] = data.get("description") or ""
 
     readme, readme_error = http_json(f"https://api.github.com/repos/{owner}/{repo}/readme")
     if readme_error or not readme:
         result["warnings"].append(readme_error or "no readme")
         return result
     try:
-        content = base64.b64decode(readme.get("content", "")).decode("utf-8", "replace")
+        content = base64.b64decode("".join(readme.get("content", "").split()), validate=True)
     except Exception as exc:  # noqa: BLE001
         result["warnings"].append(f"readme decode failed: {exc}")
         return result
-    result["readme_bytes"] = len(content)
-    result["red_flags"] = scan_red_flags(content)
-    result["readme_head"] = " ".join(content.split())[:1500]
+    record_documents(result, [(readme.get("download_url") or
+                               f"https://api.github.com/repos/{owner}/{repo}/readme", content)])
     return result
 
 
-def local_target(path: Path) -> dict[str, Any]:
-    result: dict[str, Any] = {"repo": str(path), "local": True, "warnings": []}
-    text = ""
-    for name in ("README.md", "readme.md", "README", "SKILL.md"):
-        candidate = path / name if path.is_dir() else path
-        if candidate.is_file():
-            try:
-                text += candidate.read_text(encoding="utf-8", errors="replace")
-                text += "\n"
-            except OSError as exc:
-                result["warnings"].append(f"{candidate}: {exc}")
-    if not text:
-        result["warnings"].append("no README.md / SKILL.md found at target")
-        return result
-    result["readme_bytes"] = len(text)
+def record_documents(result: dict[str, Any], documents: list[tuple[str, bytes]]) -> None:
+    result["evidence_sources"] = [
+        {"source": source, "utf8_bytes": len(content),
+         "sha256": hashlib.sha256(content).hexdigest()}
+        for source, content in documents
+    ]
+    text = "\n".join(content.decode("utf-8", "replace") for _, content in documents)
+    result["readme_bytes"] = sum(len(content) for _, content in documents)
     result["red_flags"] = scan_red_flags(text)
     result["readme_head"] = " ".join(text.split())[:1500]
+    result["document_keywords"] = sorted(tokenize(strip_urls(text)))
+    result["document_content_available"] = bool(text.strip())
+    if not text.strip():
+        result["warnings"].append("no document content available at target")
+    result["evidence_status"] = "partial" if result["warnings"] else "complete"
+
+
+def local_target(path: Path) -> dict[str, Any]:
+    result: dict[str, Any] = {"repo": str(path), "local": True, "warnings": [],
+                              "evidence_sources": [], "evidence_status": "partial"}
+    documents = []
+    candidates = ([path / name for name in ("README.md", "readme.md", "README", "SKILL.md")]
+                  if path.is_dir() else [path])
+    for candidate in candidates:
+        if candidate.is_file():
+            try:
+                documents.append((str(candidate), candidate.read_bytes()))
+            except OSError as exc:
+                result["warnings"].append(f"{candidate}: {exc}")
+    if not documents:
+        result["warnings"].append("no README.md / SKILL.md found at target")
+        return result
+    record_documents(result, documents)
     return result
 
 
@@ -315,25 +350,46 @@ def scan_red_flags(text: str) -> dict[str, list[str]]:
     return hits
 
 
+def idf_weights(skills: list[dict[str, Any]]) -> dict[str, float]:
+    """Rarity weight per token: a token shared by many installed skills carries little."""
+    counts: dict[str, int] = {}
+    for skill in skills:
+        for token in tokenize(skill["name"] + " " + skill["description"]):
+            counts[token] = counts.get(token, 0) + 1
+    total = len(skills)
+    return {token: math.log((total + 1) / (count + 0.5)) for token, count in counts.items()}
+
+
+def unseen_weight(skills: list[dict[str, Any]]) -> float:
+    """Weight of a token no installed skill mentions."""
+    return math.log((len(skills) + 1) / 0.5)
+
+
 def dedup_scan(keywords: set[str], skills: list[dict[str, Any]], top: int) -> list[dict[str, Any]]:
+    weights = idf_weights(skills)
+    default = unseen_weight(skills)
+    keyword_mass = sum(weights.get(token, default) for token in keywords)
     scored = []
     for skill in skills:
         skill_tokens = tokenize(skill["name"] + " " + skill["description"])
-        matched = sorted(keywords & skill_tokens)
+        matched = keywords & skill_tokens
         if not matched:
             continue
-        score = len(matched) / ((len(keywords) ** 0.5) * (len(skill_tokens) ** 0.5))
-        strength = "strong" if len(matched) >= 3 else ("overlap" if len(matched) == 2 else "weak")
+        matched_mass = sum(weights.get(token, default) for token in matched)
+        skill_mass = sum(weights.get(token, default) for token in skill_tokens)
+        score = matched_mass / ((keyword_mass * skill_mass) ** 0.5)
+        ranked = sorted(matched, key=lambda token: (-weights.get(token, default), token))
         scored.append(
             {
                 "name": skill["name"],
                 "root": skill["root"],
-                "matched": matched,
+                "canonical_path": skill["canonical_path"],
+                "matched": ranked[:8],
+                "matched_count": len(matched),
                 "score": round(score, 3),
-                "strength": strength,
             }
         )
-    scored.sort(key=lambda item: (-len(item["matched"]), -item["score"], item["name"]))
+    scored.sort(key=lambda item: (-item["score"], -item["matched_count"], item["name"], item["root"]))
     return scored[:top]
 
 
@@ -344,6 +400,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     add("")
     add(f"- Target: {report['target'] or '(none, inventory only)'}")
     add(f"- Generated: {report['generated']}")
+    add(f"- Collection status: {report['collection_status']}")
     add("- Read-only: no file was modified")
     add("")
 
@@ -366,9 +423,14 @@ def render_markdown(report: dict[str, Any]) -> str:
             add("### Preflight red flags in project text")
             for label, samples in flags.items():
                 add(f"- {label}: {len(samples)} kind(s) seen -> {', '.join(samples)}")
-        else:
+        elif up.get("document_content_available"):
             add("### Preflight red flags in project text")
             add("- none detected")
+        else:
+            add("### Preflight red flags in project text")
+            add("- incomplete evidence: no document content available")
+        for source in up.get("evidence_sources", []):
+            add(f"- Evidence: {source['source']} | UTF-8 bytes: {source['utf8_bytes']} | SHA-256: {source['sha256']}")
         if up.get("warnings"):
             add("")
             add(f"- Warnings: {'; '.join(up['warnings'])}")
@@ -381,33 +443,38 @@ def render_markdown(report: dict[str, Any]) -> str:
     add(f"- Total distinct skills: {len(report['skills'])}")
     add(f"- Total entrypoints: {sum(len(skill['entrypoints']) for skill in report['skills'])}")
     for skill in report["skills"]:
-        add(f"- {skill['name']}: {skill['canonical_path']}")
+        add(f"- {skill['name']}: {skill['canonical_path']} | SHA-256: {skill['sha256']}")
         for entrypoint in skill["entrypoints"]:
             add(f"  - entrypoint: {entrypoint['path']} | root: {entrypoint['root']}")
     for note in report["notes"]:
         add(f"- note: {note}")
+    for group in report["same_name_groups"]:
+        add(f"- Same name: {group['name']} | SKILL.md content identical: {group['content_identical']}")
     add("")
 
     add("## 3. Duplicate-function scan")
     add("")
     matched_tokens = sorted({token for item in report["overlaps"] for token in item["matched"]})
-    add(f"- Keywords considered: {len(report['keywords'])} | matched: {', '.join(matched_tokens) or '(none)'}")
+    add(f"- Keywords considered: {len(report['keywords'])} | top matched tokens: {', '.join(matched_tokens) or '(none)'}")
+    add("- Rarity-weighted scores order reading only; the agent determines functional overlap from source evidence")
     if report["overlaps"]:
         add("")
-        add("| skill | root | matched tokens | strength |")
-        add("|---|---|---|---|")
+        add("| skill | source | matched tokens | matched | score |")
+        add("|---|---|---|---|---|")
         for item in report["overlaps"]:
-            add(f"| {item['name']} | {item['root']} | {', '.join(item['matched'])} | {item['strength']} |")
+            add(f"| {item['name']} | {item['canonical_path']} | {', '.join(item['matched'])} | {item['matched_count']} | {item['score']} |")
+    elif report["target"] and not (up and up.get("document_content_available")):
+        add("- incomplete candidate evidence; keyword overlap cannot be ruled out")
     else:
         add("- no installed skill shares a keyword with the candidate")
     add("")
 
-    add("## 4. Verdict skeleton (fill in)")
+    add("## 4. Agent review handoff")
     add("")
-    add("- decision: install | decline")
-    add("- scope: user-global | project | archive")
-    add("- reason:")
-    add("- date:")
+    add(f"- Review status: {report['agent_review']['status']}")
+    add("- Decision: unset; collection status and scores never approve or reject installation")
+    add("- Return this report to the calling agent with the user's intended use and target environment")
+    add("- The agent reads sources, resolves uncertainty, and returns install / decline / defer with evidence and open questions")
     return "\n".join(lines)
 
 
@@ -427,12 +494,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("target", nargs="?", help="GitHub URL or local path of the candidate")
     parser.add_argument("--keywords", default="", help="comma-separated extra dedup keywords")
     parser.add_argument("--roots", action="append", default=[], help="extra skill root (repeatable)")
+    parser.add_argument("--only-roots", action="store_true", help="disable automatic root discovery; requires --roots")
+    parser.add_argument("--as-of", help="report date, YYYY-MM-DD (default: current UTC date)")
+    parser.add_argument("--strict", action="store_true", help="exit nonzero on incomplete evidence or inventory warnings")
     parser.add_argument("--top", type=int, default=8, help="max overlap rows (default 8)")
     parser.add_argument("--no-network", action="store_true", help="skip live GitHub lookups")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     args = parser.parse_args(argv)
+    if args.only_roots and not args.roots:
+        parser.error("--only-roots requires --roots")
+    if args.top <= 0:
+        parser.error("--top must be positive")
+    if args.as_of:
+        try:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.as_of):
+                raise ValueError
+            as_of = dt.date.fromisoformat(args.as_of)
+        except ValueError:
+            parser.error("--as-of must be an ISO date (YYYY-MM-DD)")
+    else:
+        as_of = dt.datetime.now(dt.timezone.utc).date()
 
-    roots, notes = collect_roots(args.roots)
+    roots, notes = collect_roots(args.roots, args.only_roots)
     skills, inv_notes = inventory(roots)
     notes.extend(inv_notes)
 
@@ -459,29 +542,41 @@ def main(argv: list[str] | None = None) -> int:
         github = parse_github(args.target)
         target_path = Path(os.path.expanduser(args.target))
         if github and not args.no_network:
-            upstream = upstream_github(*github)
+            upstream = upstream_github(*github, as_of=as_of)
             keywords |= tokenize(upstream.get("repo", ""))
             keywords |= tokenize(upstream.get("description", ""))
-            keywords |= tokenize(strip_urls(upstream.get("readme_head", "")))
+            keywords.update(upstream.get("document_keywords", []))
         elif github and args.no_network:
             keywords |= tokenize(github[0] + " " + github[1])
             notes.append("network lookups skipped (--no-network)")
+            upstream = {"repo": "/".join(github), "warnings": [notes[-1]],
+                        "evidence_sources": [], "evidence_status": "partial"}
         elif target_path.exists():
             upstream = local_target(target_path)
             keywords |= tokenize(target_path.name)
-            keywords |= tokenize(strip_urls(upstream.get("readme_head", "")))
+            keywords.update(upstream.get("document_keywords", []))
         else:
             keywords |= tokenize(args.target)
             notes.append(f"target is neither a GitHub URL nor an existing path: {args.target}")
+            upstream = {"repo": args.target, "local": True, "warnings": [notes[-1]],
+                        "evidence_sources": [], "evidence_status": "partial"}
 
     keywords = {token for token in keywords if len(token) >= 3 and token not in STOPWORDS}
 
     report = {
+        "schema_version": 2,
+        "agent_review": {
+            "status": "required" if args.target else "not_requested",
+            "decision": None,
+        },
         "target": args.target or "",
-        "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "generated": as_of.isoformat(),
+        "collection_status": ("partial" if notes or (upstream and upstream["evidence_status"] != "complete")
+                              else "complete" if args.target else "inventory_only"),
         "upstream": upstream,
         "inventory_roots": inventory_roots,
         "skills": skills,
+        "same_name_groups": same_name_groups(skills),
         "overlaps": dedup_scan(keywords, skills, args.top),
         "keywords": sorted(keywords),
         "notes": notes,
@@ -491,7 +586,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print(render_markdown(report))
-    return 0
+    return 1 if args.strict and report["collection_status"] == "partial" else 0
 
 
 if __name__ == "__main__":
