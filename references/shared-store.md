@@ -23,6 +23,19 @@ Use a directory outside automatic skill discovery, such as `~/.local/share/agent
 
 An agent that already discovers `.agents/skills` may need no additional tool-specific link. Check its actual loader rather than creating directories for every agent. Link the whole skill folder, including scripts and references, so relative resources remain available.
 
+## Check external-link support
+
+Filesystem access, loader permission, and skill activation are separate checks. A valid symlink can still be rejected when its resolved target lies outside a trusted project root. Check the installed loader's documented behavior or implementation before choosing a layout; settings and trust rules differ across tools and versions.
+
+- If it supports external-directory permission independently of discovery, grant the smallest required target and retain the intended entrypoints.
+- If a path setting also discovers skills, treat it as activation. Prefer project-scoped entries for individual skills when supported. Registering a shared store globally can expose every skill in that store to unrelated projects.
+- Explicit entries and automatic discovery may both examine the same link. If necessary, use the loader's supported exclusions for those specific automatic entries while retaining the explicit entries; verify the final skill list and diagnostics rather than hiding warnings.
+- If the loader cannot use external sources at the intended scope, use its supported project-local installation or a pinned copy. Record source, revision, and update ownership for any extra copy. If no supported method preserves scope, report the limitation and defer installation.
+
+Keep tool-specific keys and commands in the installation record. Apply the real-loader and unrelated-workspace checks in Step 5 of SKILL.md to each affected tool; success in one loader does not establish compatibility with another.
+
+## Scoped symlink example
+
 The Skills CLI's default symlink mode already shares a canonical copy among agents within an installation scope. Its canonical directory is `~/.agents/skills` for global installs or `<project>/.agents/skills` for project installs. A cross-project store outside those roots requires an explicit source and update policy.
 
 ## Example: enable this skill from one checkout

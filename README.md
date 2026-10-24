@@ -15,7 +15,7 @@ An agent skill for deciding whether a new tool, skill, or repository belongs in 
 npx skills add hong-tm/tool-intake
 ```
 
-Or link this checkout into your agent's skill directory. If you use several agents or projects, keep one maintained source and enable it through scoped symlinks; see [Shared skill stores](#shared-skill-stores).
+Or, if your agent's loader permits it, link this checkout into its skill directory. If you use several agents or projects, keep one maintained source and enable it at the intended scope; see [Shared skill stores](#shared-skill-stores).
 
 ## Why
 
@@ -30,7 +30,7 @@ This skill replaces improvisation with a fixed procedure and an evidence step.
 3. One copy per function. If something installed already covers it, decline or state the concrete difference.
 4. Pick a scope: user-global, project-level, or decline. Store shared skills once and link only the scopes that need them.
 5. Preflight compatibility: output protocol versus the viewing surface, privilege requirements, resident footprint, runtime reachability under systemd and cron.
-6. Install, then verify the real loader picks the skill up with no name collisions. A directory entry is not an install.
+6. Install, then verify the real loader picks the skill up with no name collisions or access blocks, and unrelated workspaces gain no unintended skills. A general health check is insufficient unless it verifies actual skill loading.
 7. Record the decision durably. Decisions that live only in chat get re-litigated.
 
 ## The audit script
@@ -87,6 +87,8 @@ shared source/support-triage/
 ```
 
 The Skills CLI already uses canonical copies and symlinks within each installation scope. This additional layout shares sources across projects while keeping activation separate. It does not install a background manager or change any loader.
+
+Some loaders block project links to external sources. A setting that accepts a directory may also load every skill it contains. Check the target loader's capabilities and preserve scope using separate access permission, explicit project entries, or a supported project-local installation; see [external-link compatibility](references/shared-store.md#check-external-link-support).
 
 The JSON inventory keeps `path` and `root` for the first discovered entrypoint and adds `canonical_path` plus `entrypoints`, a list of `{path, root}` objects. Two links to the same file count as one skill. Two different files with the same skill name remain separate and produce a diagnostic.
 
