@@ -62,7 +62,7 @@ If an installed skill already covers the same function, decline, or state the co
 
 When in doubt, project-level. Polluting global context with a project-specific skill taxes every future turn.
 
-Separate storage from activation. When a skill needs reuse across projects or agents, keep one maintained source outside auto-discovered skill roots, then link individual skills into the intended global or project roots. A development checkout can be that source. Link only the skills each scope needs, and keep package-owned skills with their package manager. For setup, migration, updates, and portability, read [Shared skill stores](references/shared-store.md).
+Separate storage from activation. When a skill needs reuse across projects or agents, keep one maintained source outside auto-discovered skill roots, then link individual skills into the intended global or project roots. A development checkout can be that source. Link only the skills each scope needs, and keep package-owned skills with their package manager. For setup, migration, blocked external links, updates, and portability, read [Shared skill stores](references/shared-store.md) to choose a loading method that preserves scope.
 
 ## Step 4 — Preflight compatibility before installing
 
@@ -77,7 +77,7 @@ Before installation, the calling agent returns a review containing `decision` (`
 
 An available Jev integration or another agent may assist with a bounded comparison. Pass the intended use, candidate evidence, relevant installed-skill text, and the exact uncertainty. Request a reasoned assessment with evidence references and an explicit uncertain outcome. The calling agent checks that assessment against the sources and owns the final recommendation. The audit script makes no model calls; if Jev is unavailable, the calling agent performs the review directly.
 
-Installing is not done until the agent's real loader confirms it: run the loader the way the harness does, at the target working directories, and check the new skill is counted exactly once with zero name collisions. A skill that only exists in the directory but fails to load, or collides with an installed name, is not installed. If the stack has no scriptable loader, start a fresh session and confirm the skill appears and triggers.
+Installing is not done until the agent's real loader confirms it: run the loader the way the harness does, at the target working directories, and check the new skill is counted exactly once with zero name collisions or access-blocking diagnostics. A filesystem inventory or successful health check proves loading only if it exercises this same discovery and access path and reports the loaded skills. For a scoped installation or loader-setting change, also compare an unrelated workspace against its baseline to confirm it gains no unintended skills. A skill that only exists in the directory but fails to load, or collides with an installed name, is not installed. If the stack has no scriptable loader, reload resources or start a fresh session using its supported method and confirm the skill appears and triggers. Record the verification method and any unverified surfaces.
 
 For a migration, save the entrypoints and skill lists first. Compare loading before and after in each affected workspace, check relative resources through the links, and retain a rollback backup. Verify excluded projects do not gain skills. Update the maintained source once; an installer that replaces a linked entrypoint can silently create another copy.
 
